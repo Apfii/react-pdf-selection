@@ -244,6 +244,7 @@ export class PdfViewer<D extends object> extends Component<PdfViewerProps<D>, Pd
     };
 
     onTextSelectionChange = () => {
+        const {pageIndex} = this.props;
         if (this.state.activeSelectionMode !== SelectionMode.TEXT) return;
         const selection = getWindow(this.containerDiv).getSelection();
         if (!selection || selection.isCollapsed) return;
@@ -251,15 +252,25 @@ export class PdfViewer<D extends object> extends Component<PdfViewerProps<D>, Pd
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : undefined;
         if (!range) return;
 
-        const page = getPageFromRange(range);
-        if (!page) return;
-        const pageDimension = { width: page.node.clientWidth, height: page.node.clientHeight };
+        let node, number,page;
+        if(pageIndex){
+            number = pageIndex;
+            node = this.getPageRef(pageIndex).current;
+        }
+        page = getPageFromRange(range);
+        if(page){
+            node = page.node;
+            number = page.number;
+        }
+        if(!node || !number) return;
 
-        const rects = getClientRects(range, page.node);
+        const pageDimension = { width: node.clientWidth, height: node.clientHeight };
+
+        const rects = getClientRects(range, node);
         if (rects.length === 0) return;
 
         const boundingRect = getBoundingRect(rects);
-        const position = normalizePosition({ boundingRect, rects, pageNumber: page.number }, pageDimension);
+        const position = normalizePosition({ boundingRect, rects, pageNumber: number }, pageDimension);
         const text = Array.from(range.cloneContents().childNodes)
             .map((node) => node.textContent)
             .join(" ");
