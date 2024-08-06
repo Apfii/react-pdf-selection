@@ -2,6 +2,7 @@ import React, {Component, createRef, CSSProperties, ReactElement, RefObject} fro
 import isEqual from "react-fast-compare";
 import {Document, pdfjs} from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import 'react-pdf/dist/Page/TextLayer.css';
 import "../style/react_pdf_viewer.css";
 import {NormalizedAreaSelection, NormalizedTextSelection, SelectionType} from "../types";
 import {generateUuid, getBoundingRect, getClientRects, getPageFromRange, getWindow} from "../utils";
@@ -64,7 +65,7 @@ interface PdfViewerState<D extends object> {
     visiblePages?: number[];
 }
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export class PdfViewer<D extends object> extends Component<PdfViewerProps<D>, PdfViewerState<D>> {
     static defaultProps = {
@@ -244,7 +245,6 @@ export class PdfViewer<D extends object> extends Component<PdfViewerProps<D>, Pd
     };
 
     onTextSelectionChange = () => {
-        const {pageIndex} = this.props;
         if (this.state.activeSelectionMode !== SelectionMode.TEXT) return;
         const selection = getWindow(this.containerDiv).getSelection();
         if (!selection || selection.isCollapsed) return;
@@ -252,25 +252,15 @@ export class PdfViewer<D extends object> extends Component<PdfViewerProps<D>, Pd
         const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : undefined;
         if (!range) return;
 
-        let node, number,page;
-        if(pageIndex){
-            number = pageIndex;
-            node = this.getPageRef(pageIndex).current;
-        }
-        page = getPageFromRange(range);
-        if(page){
-            node = page.node;
-            number = page.number;
-        }
-        if(!node || !number) return;
+        const page = getPageFromRange(range);
+        if (!page) return;
+        const pageDimension = { width: page.node.clientWidth, height: page.node.clientHeight };
 
-        const pageDimension = { width: node.clientWidth, height: node.clientHeight };
-
-        const rects = getClientRects(range, node);
+        const rects = getClientRects(range, page.node);
         if (rects.length === 0) return;
 
         const boundingRect = getBoundingRect(rects);
-        const position = normalizePosition({ boundingRect, rects, pageNumber: number }, pageDimension);
+        const position = normalizePosition({ boundingRect, rects, pageNumber: page.number }, pageDimension);
         const text = Array.from(range.cloneContents().childNodes)
             .map((node) => node.textContent)
             .join(" ");

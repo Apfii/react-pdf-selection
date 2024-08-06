@@ -1,3 +1,4 @@
+'use client';
 import { CSSProperties } from "react";
 
 export type BoundingRect = {
