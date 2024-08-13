@@ -171,7 +171,7 @@ export class PdfPage<D extends object> extends Component<PdfPageProps<D>, PdfPag
             const { style } = layer as HTMLElement;
             style.width = "100%";
             style.height = "100%";
-            style.setProperty("--scale-factor", "1.5");
+            // style.setProperty("--scale-factor", "1");
         });
     };
 
