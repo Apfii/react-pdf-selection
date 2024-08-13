@@ -1,6 +1,6 @@
-import React, {Component, createRef, CSSProperties, Fragment, RefObject} from "react";
+import React, { Component, createRef, CSSProperties, Fragment, RefObject } from "react";
 import isEqual from "react-fast-compare";
-import {Page} from "react-pdf";
+import { Page } from "react-pdf";
 import {
     BoundingRect,
     Coords,
@@ -9,13 +9,13 @@ import {
     NormalizedPosition,
     SelectionType,
 } from "../types";
-import {getAbsoluteBoundingRectWithCSSProperties, getAreaAsPNG, getWindow} from "../utils";
-import {getPositionWithCSSProperties, normalizePosition} from "../utils/coordinates";
-import {AreaSelection, AreaSelectionProps} from "./AreaSelection";
-import {NewAreaSelection, NewAreaSelectionProps} from "./NewAreaSelection";
-import {PageLoader} from "./PageLoader";
-import {PageDimension, PDFOrientation} from "./PdfViewer";
-import {TextSelection, TextSelectionProps} from "./TextSelection";
+import { getAbsoluteBoundingRectWithCSSProperties, getAreaAsPNG, getWindow } from "../utils";
+import { getPositionWithCSSProperties, normalizePosition } from "../utils/coordinates";
+import { AreaSelection, AreaSelectionProps } from "./AreaSelection";
+import { NewAreaSelection, NewAreaSelectionProps } from "./NewAreaSelection";
+import { PageLoader } from "./PageLoader";
+import { PageDimension, PDFOrientation } from "./PdfViewer";
+import { TextSelection, TextSelectionProps } from "./TextSelection";
 
 export interface PdfPageProps<D extends object> {
     pageNumber: number;
@@ -162,6 +162,19 @@ export class PdfPage<D extends object> extends Component<PdfPageProps<D>, PdfPag
         style.transform = "";
     };
 
+    onTextLayerRender = () => {
+        console.log("textLayerRendered");
+        const textLayers = document.querySelectorAll(".react-pdf__Page__textContent");
+        console.log(textLayers);
+
+        textLayers.forEach((layer) => {
+            const { style } = layer as HTMLElement;
+            style.width = "100%";
+            style.height = "100%";
+            style.setProperty("--scale-factor", "1.5");
+        });
+    };
+
     onPageRender = () => {
         if (this._mounted) this.setState({ renderComplete: true });
     };
@@ -190,10 +203,10 @@ export class PdfPage<D extends object> extends Component<PdfPageProps<D>, PdfPag
         if (!this.inputRef || !selections) return null;
         const selectionRenders = selections.map((selection, i) => {
             if (!pageDimensions) return null;
-            const position = getPositionWithCSSProperties(
-                selection.position,
-                { height: getPageHeight(pageDimensions), width: getPageWidth(pageDimensions) },
-            );
+            const position = getPositionWithCSSProperties(selection.position, {
+                height: getPageHeight(pageDimensions),
+                width: getPageWidth(pageDimensions),
+            });
             const normalizedSelection = { ...selection, position };
             return isAreaSelection(normalizedSelection) ? (
                 areaSelectionComponent ? (
@@ -219,30 +232,37 @@ export class PdfPage<D extends object> extends Component<PdfPageProps<D>, PdfPag
                 boundingRect={getAbsoluteBoundingRectWithCSSProperties(areaSelection.position.absolute.boundingRect)}
             />
         );
+        console.log("page");
         return (
             <div
                 ref={this.props.innerRef}
-                className="pdfViewer__page-container"
+                // className="pdfViewer__page-container"
                 style={{
                     // @ts-ignore-next-line A bit hacky, but it works to set a custom ::selection color programmatically
                     "--selection-color": this.props.textSelectionColor,
-                    ...(pageDimensions ? {
-                        width: `${getPageWidth(pageDimensions)}px`,
-                        height: `${getPageHeight(pageDimensions)}px`,
-                    } : {}),
-                    ...this.props.style,
+                    // "--scale-factor": "1.2 !important",
+                    // width: "100%",
+                    // height: "100%",
+                    // ...(pageDimensions
+                    //     ? {
+                    //           width: `${getPageWidth(pageDimensions)}px`,
+                    //           height: `${getPageHeight(pageDimensions)}px`,
+                    //       }
+                    //     : {}),
+                    // ...this.props.style,
                 }}
                 onPointerDown={this.onMouseDown}
             >
                 <Page
                     key={`page_${pageNumber}`}
                     pageNumber={pageNumber}
-                    width={pageDimensions ? getPageWidth(pageDimensions) : undefined}
-                    height={pageDimensions ? getPageHeight(pageDimensions) : undefined}
+                    // width={pageDimensions ? getPageWidth(pageDimensions) : undefined}
+                    // height={pageDimensions ? getPageHeight(pageDimensions) : undefined}
                     inputRef={this.inputRef}
                     loading={<PageLoader />}
                     onLoadSuccess={this.onPageLoad}
                     onRenderSuccess={this.onPageRender}
+                    onRenderTextLayerSuccess={this.onTextLayerRender}
                 >
                     {renderComplete && this.renderSelections()}
                     {newAreaSelection}
